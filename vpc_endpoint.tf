@@ -97,3 +97,21 @@ resource "aws_vpc_endpoint" "ec2messages" { # EC2 관리 메시지 송수신
     Name = "vpce-ec2messages"
   }
 }
+
+###########################
+# Kinesis Interface Endpoint
+###########################
+resource "aws_vpc_endpoint" "kinesis" {
+  vpc_id            = aws_vpc.main_vpc.id
+  service_name      = "com.amazonaws.ap-northeast-2.kinesis-streams"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = [aws_subnet.private_subnet_app.id]
+  security_group_ids = [aws_security_group.outer_ec2_sg.id]
+
+  private_dns_enabled = true
+
+  tags = {
+    Name = "kinesis-interface-endpoint"
+  }
+}
+
