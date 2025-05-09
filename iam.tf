@@ -80,3 +80,67 @@ resource "aws_iam_role_policy_attachment" "attach_iot_kinesis_policy" {
   role       = aws_iam_role.iot_to_kinesis_role.name
   policy_arn = aws_iam_policy.iot_kinesis_policy.arn
 }
+
+##############################
+# IAM Role for Firehose
+##############################
+resource "aws_iam_role" "firehose_role" {
+  name = "firehose_delivery_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "firehose.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "firehose_policy" {
+  name = "firehose_delivery_policy"
+  role = aws_iam_role.firehose_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:PutObjectAcl"
+        ],
+        Resource = "${aws_s3_bucket.kinesis_bucket.arn}/*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetBucketLocation",
+          "s3:ListBucket"
+        ],
+        Resource = aws_s3_bucket.kinesis_bucket.arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "kinesis:GetShardIterator",
+          "kinesis:GetRecords",
+          "kinesis:DescribeStream",
+          "kinesis:ListShards"
+        ],
+        Resource = aws_kinesis_stream.sensor_data_stream.arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:PutLogEvents"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
